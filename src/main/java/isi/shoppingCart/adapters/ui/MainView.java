@@ -2,11 +2,15 @@ package isi.shoppingCart.adapters.ui;
 
 import isi.shoppingCart.entities.CartItem;
 import isi.shoppingCart.entities.Product;
+import isi.shoppingCart.entities.Purchase;
 import isi.shoppingCart.infrastructure.repositories.InMemoryCartRepository;
 import isi.shoppingCart.infrastructure.repositories.InMemoryProductRepository;
+import isi.shoppingCart.infrastructure.repositories.InMemoryPurchaseRepository;
 import isi.shoppingCart.usecases.ports.CartRepository;
 import isi.shoppingCart.usecases.ports.ProductRepository;
+import isi.shoppingCart.usecases.ports.PurchaseRepository;
 import isi.shoppingCart.usecases.services.AgregarProductoAlCarritoUseCase;
+import isi.shoppingCart.usecases.services.ConfirmarCompraUseCase;
 import isi.shoppingCart.usecases.services.ShoppingCartApp;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -19,6 +23,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class MainView {
@@ -31,13 +36,18 @@ public class MainView {
     public MainView() {
         ProductRepository productRepository = new InMemoryProductRepository();
         CartRepository cartRepository = new InMemoryCartRepository(productRepository);
+        PurchaseRepository purchaseRepository = new InMemoryPurchaseRepository();
+
         AgregarProductoAlCarritoUseCase agregarProductoAlCarritoUseCase =
                 new AgregarProductoAlCarritoUseCase(productRepository, cartRepository);
+        ConfirmarCompraUseCase confirmarCompraUseCase =
+                new ConfirmarCompraUseCase(cartRepository, purchaseRepository);
 
         shoppingCartApp = new ShoppingCartApp(
                 productRepository,
                 cartRepository,
-                agregarProductoAlCarritoUseCase
+                agregarProductoAlCarritoUseCase,
+                confirmarCompraUseCase
         );
 
         catalogBox = new VBox(10);
@@ -81,7 +91,32 @@ public class MainView {
         title.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
 
         Button confirmButton = new Button("Confirmar compra");
-        confirmButton.setOnAction(event -> showMessage("Por implementar"));
+        confirmButton.setOnAction(event -> {
+            Purchase purchase = shoppingCartApp.confirmarCompra();
+
+            if (purchase == null) {
+                showError("El carrito está vacío.");
+            } else {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+                StringBuilder sb = new StringBuilder();
+                sb.append("Compra confirmada\n");
+                sb.append("Fecha: ").append(purchase.getDate().format(formatter)).append("\n\n");
+
+                sb.append("Productos:\n");
+                for (int i = 0; i < purchase.getItems().size(); i++) {
+                    CartItem item = purchase.getItems().get(i);
+                    sb.append("  - ").append(item.getProduct().getName())
+                      .append(" x").append(item.getQuantity())
+                      .append("  ($").append(item.getSubtotal()).append(")\n");
+                }
+
+                sb.append("\nTotal: $").append(purchase.getTotal());
+                String message = sb.toString();
+                showMessage(message);
+                refreshCatalog();
+                refreshCart();
+            }
+        });
 
         VBox panel = new VBox(10);
         panel.getChildren().addAll(title, cartBox, totalLabel, confirmButton);

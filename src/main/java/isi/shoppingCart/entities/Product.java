@@ -38,4 +38,12 @@ public class Product {
             availableQuantity = availableQuantity - 1;
         }
     }
+
+    public void decreaseAvailableQuantity(int quantity) {
+        availableQuantity = availableQuantity - quantity;
+
+        if (availableQuantity < 0) {
+            availableQuantity = 0;
+        }
+    }
 }
