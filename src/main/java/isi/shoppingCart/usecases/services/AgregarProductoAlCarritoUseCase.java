@@ -15,24 +15,15 @@ public class AgregarProductoAlCarritoUseCase {
         this.cartRepository = cartRepository;
     }
 
-    public String execute(int productId) {
+    public void execute(int productId) {
         Product product = productRepository.findById(productId);
 
         if (product == null) {
-            return "Producto no encontrado.";
+            return;
         }
 
         Cart cart = cartRepository.getCart();
-        int quantityInCart = cart.getQuantityOfProduct(productId);
-
-        if (quantityInCart >= product.getAvailableQuantity()) {
-            return "No se puede agregar más cantidad de este producto. "
-                    + "En el carrito solo se permite hasta la cantidad disponible.";
-        }
-
         cart.addProduct(product);
         cartRepository.save(cart);
-
-        return "";
     }
 }

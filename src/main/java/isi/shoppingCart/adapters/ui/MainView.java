@@ -2,11 +2,6 @@ package isi.shoppingCart.adapters.ui;
 
 import isi.shoppingCart.entities.CartItem;
 import isi.shoppingCart.entities.Product;
-import isi.shoppingCart.infrastructure.repositories.InMemoryCartRepository;
-import isi.shoppingCart.infrastructure.repositories.InMemoryProductRepository;
-import isi.shoppingCart.usecases.ports.CartRepository;
-import isi.shoppingCart.usecases.ports.ProductRepository;
-import isi.shoppingCart.usecases.services.AgregarProductoAlCarritoUseCase;
 import isi.shoppingCart.usecases.services.ShoppingCartApp;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -29,16 +24,7 @@ public class MainView {
     private Label totalLabel;
 
     public MainView() {
-        ProductRepository productRepository = new InMemoryProductRepository();
-        CartRepository cartRepository = new InMemoryCartRepository(productRepository);
-        AgregarProductoAlCarritoUseCase agregarProductoAlCarritoUseCase =
-                new AgregarProductoAlCarritoUseCase(productRepository, cartRepository);
-
-        shoppingCartApp = new ShoppingCartApp(
-                productRepository,
-                cartRepository,
-                agregarProductoAlCarritoUseCase
-        );
+        shoppingCartApp = new ShoppingCartApp();
 
         catalogBox = new VBox(10);
         cartBox = new VBox(10);
@@ -62,7 +48,7 @@ public class MainView {
         BorderPane root = new BorderPane();
         root.setCenter(content);
 
-        return new Scene(root, 900, 450);
+        return new Scene(root, 800, 450);
     }
 
     private VBox createCatalogPanel() {
@@ -71,7 +57,7 @@ public class MainView {
 
         VBox panel = new VBox(10);
         panel.getChildren().addAll(title, catalogBox);
-        panel.setPrefWidth(430);
+        panel.setPrefWidth(380);
         panel.setStyle("-fx-border-color: lightgray; -fx-padding: 10;");
         return panel;
     }
@@ -85,7 +71,7 @@ public class MainView {
 
         VBox panel = new VBox(10);
         panel.getChildren().addAll(title, cartBox, totalLabel, confirmButton);
-        panel.setPrefWidth(430);
+        panel.setPrefWidth(380);
         panel.setStyle("-fx-border-color: lightgray; -fx-padding: 10;");
         return panel;
     }
@@ -102,24 +88,17 @@ public class MainView {
 
             Label nameLabel = new Label(product.getName());
             Label priceLabel = new Label("$ " + product.getPrice());
-            Label stockLabel = new Label("Disponible: " + product.getAvailableQuantity());
             Button addButton = new Button("Agregar");
 
             Region spacer = new Region();
             HBox.setHgrow(spacer, Priority.ALWAYS);
 
             addButton.setOnAction(event -> {
-                String message = shoppingCartApp.addProductToCart(product.getId());
-
-                if (!message.equals("")) {
-                    showError(message);
-                }
-
-                refreshCatalog();
+                shoppingCartApp.addProductToCart(product.getId());
                 refreshCart();
             });
 
-            row.getChildren().addAll(nameLabel, priceLabel, stockLabel, spacer, addButton);
+            row.getChildren().addAll(nameLabel, priceLabel, spacer, addButton);
             row.setStyle("-fx-padding: 5; -fx-border-color: #DDDDDD;");
 
             catalogBox.getChildren().add(row);
@@ -152,14 +131,6 @@ public class MainView {
     private void showMessage(String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Mensaje");
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
-    private void showError(String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Error");
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
